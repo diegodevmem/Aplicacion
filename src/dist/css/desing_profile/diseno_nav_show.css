@@ -1,0 +1,40 @@
+#fondo_user{
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+    width: 50%;
+    border: 1px solid white;
+    z-index: -1px;  
+    position: absolute;
+    left: 25%;
+    top: 30px;
+    height: 35%;
+    border-radius: 50%;
+    
+}
+
+
+#p_cui{
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+    font-weight: bold;
+    width: 35%;
+    height: 30px;
+}
+
+#navheader{
+    height: 55px;
+    
+}
+/*imagen 1 es el fondo de rayas en diagonal de colores*/
+#fondo_imagen1{   
+    margin-left: auto;
+    margin-right: auto;
+    width: 100%;
+    height: 200px;    
+    padding: auto;
+    background-size: cover;
+    left: 0px;
+    top: 0px;
+}

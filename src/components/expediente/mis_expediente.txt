@@ -1,0 +1,2252 @@
+<template>
+  <div class="content-wrapper" v-loading="loading">
+    <section class="content-header">
+      <h1 class="label bg-primary">
+        Mis Expedientes
+        <small style="color: white">Sistema de Expedientes</small>
+      </h1>
+    </section>
+    <br />
+    <section class="content" v-loading="loading">
+      <div class="row">
+        <div class="col-sm-12 col-md-12 col-lg-12">
+          <ol class="label breadcrumb bg-gray pull-right">
+            <router-link tag="li" to="/exp_default" exact>
+              <i class="fa fa-home"></i> Home
+            </router-link>
+            <router-link tag="li" to="/" exact>
+              <i class="fa fa-dashboard"></i> Dashboard
+            </router-link>
+            <li><i class="fa fa-bug active"></i> Mis Expedientes</li>
+          </ol>
+        </div>
+        <div class="col-sm-12 col-md-12 col-lg-12">
+          <div class="box box-primary">
+            <div class="box-header with-border">
+              <h1 class="box-title">
+                <i class="fa fa-list"></i> Información ingresada en el sistema.
+              </h1>
+              <div class="box-tools" style="width: 25%">
+                <form class="form-horizontal">
+                  <div class="input-group input-group-sm">
+                    <input
+                      type="text"
+                      name="table_search"
+                      class="form-control pull-right"
+                      placeholder="Search"
+                      v-model="search"
+                      @input="search = $event.target.value.toUpperCase()"
+                    />
+                    <div class="input-group-btn">
+                      <button type="submit" class="btn btn-default">
+                        <i class="fa fa-search"></i>
+                      </button>
+                    </div>
+                  </div>
+                </form>
+              </div>
+            </div>
+            <div class="panel-body table-responsive">
+              <div class="row">
+                <div class="col-xs-12 col-sm-12 col-md-12 col-lg-6">
+                  <label class="pull-left"
+                    >mostrando:
+                    <b-form-select :options="pageOptions" v-model="perPage" />
+                  </label>
+                </div>
+              </div>
+              <div class="row"><hr /></div>
+              <div class="row">
+                <div class="col-sm-12 col-md-12 col-lg-12">
+                  <b-table
+                    ref="selectableTable"
+                    responsive
+                    hover
+                    small
+                    flex
+                    :fields="fields"
+                    :items="items"
+                    :filter="search"
+                    :current-page="currentPage"
+                    :per-page="perPage"
+                    @filtered="onFiltered"
+                    select-mode="single"
+                    selectable
+                    @row-selected="showOptions"
+                  >
+                    <!-- A virtual column -->
+                    <template slot="estado" slot-scope="data">
+                      <small>{{ data.item.estado }}</small>
+                    </template>
+                    <template slot="opcion" slot-scope="data">
+                      <div class="btn-group-vertical">
+                        <a
+                          class="btn btn-info btn-lg"
+                          @click="seguimiento(data.item)"
+                          v-tooltip.botton="
+                            'Al dar click verá los seguimientos que pertenecen a la actuación con código ' +
+                            data.item.codigo_barra
+                          "
+                          ><i class="fa fa-eye"></i
+                        ></a>
+                        <a
+                          class="btn btn-success btn-lg"
+                          @click="buscar_documento(data.item)"
+                          v-tooltip.botton="
+                            'Al dar click verá los documentos que pertenecen a la actuación con código ' +
+                            data.item.codigo_barra
+                          "
+                          ><i class="fa fa-file"></i
+                        ></a>
+                        <a
+                          class="btn btn-warning btn-lg"
+                          @click="editarA(data.item)"
+                          v-tooltip.botton="
+                            'Al dar click el sistema le mostrará la información para editar la actuación con código ' +
+                            data.item.codigo_barra
+                          "
+                          ><i class="fa fa-pencil"></i
+                        ></a>
+                        <a
+                          class="btn btn-primary btn-lg"
+                          @click="agregarRequisitos(data.item)"
+                          v-tooltip.botton="
+                            'Al dar click podra completar los requisitos del expediente ' +
+                            data.item.codigo_barra
+                          "
+                          ><i class="fa fa-upload"></i
+                        ></a>
+
+                        <a
+                          v-if="data.item.congelado === false"
+                          class="btn btn-info btn-lg"
+                          @click="congelar(data.item)"
+                          v-tooltip.botton="
+                            'Al dar click podra congelar el expediente ' +
+                            data.item.codigo_barra
+                          "
+                          >
+                          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="white" class="bi bi-snow" viewBox="0 0 16 16">
+                            <path d="M8 16a.5.5 0 0 1-.5-.5v-1.293l-.646.647a.5.5 0 0 1-.707-.708L7.5 12.793V8.866l-3.4 1.963-.496 1.85a.5.5 0 1 1-.966-.26l.237-.882-1.12.646a.5.5 0 0 1-.5-.866l1.12-.646-.884-.237a.5.5 0 1 1 .26-.966l1.848.495L7 8 3.6 6.037l-1.85.495a.5.5 0 0 1-.258-.966l.883-.237-1.12-.646a.5.5 0 1 1 .5-.866l1.12.646-.237-.883a.5.5 0 1 1 .966-.258l.495 1.849L7.5 7.134V3.207L6.147 1.854a.5.5 0 1 1 .707-.708l.646.647V.5a.5.5 0 1 1 1 0v1.293l.647-.647a.5.5 0 1 1 .707.708L8.5 3.207v3.927l3.4-1.963.496-1.85a.5.5 0 1 1 .966.26l-.236.882 1.12-.646a.5.5 0 0 1 .5.866l-1.12.646.883.237a.5.5 0 1 1-.26.966l-1.848-.495L9 8l3.4 1.963 1.849-.495a.5.5 0 0 1 .259.966l-.883.237 1.12.646a.5.5 0 0 1-.5.866l-1.12-.646.236.883a.5.5 0 1 1-.966.258l-.495-1.849-3.4-1.963v3.927l1.353 1.353a.5.5 0 0 1-.707.708l-.647-.647V15.5a.5.5 0 0 1-.5.5z"/>
+                          </svg>
+                        </a>
+                        <a
+                          v-if="data.item.congelado === true"
+                          class="btn btn-danger btn-lg"
+                          @click="descongelar(data.item.codigo_barra)"
+                          v-tooltip.botton="
+                            'Al dar click podra descongelar el expediente ' +
+                            data.item.codigo_barra
+                          "
+                          >
+                          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-sun-fill" viewBox="0 0 16 16">
+                            <path d="M8 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM8 0a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 0zm0 13a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 13zm8-5a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2a.5.5 0 0 1 .5.5zM3 8a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2A.5.5 0 0 1 3 8zm10.657-5.657a.5.5 0 0 1 0 .707l-1.414 1.415a.5.5 0 1 1-.707-.708l1.414-1.414a.5.5 0 0 1 .707 0zm-9.193 9.193a.5.5 0 0 1 0 .707L3.05 13.657a.5.5 0 0 1-.707-.707l1.414-1.414a.5.5 0 0 1 .707 0zm9.193 2.121a.5.5 0 0 1-.707 0l-1.414-1.414a.5.5 0 0 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .707zM4.464 4.465a.5.5 0 0 1-.707 0L2.343 3.05a.5.5 0 1 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .708z"/>
+                          </svg>
+                        </a>
+                        <a
+                          v-if="limitar && !data.item.completo"
+                          :class="
+                            data.item.deleted_at
+                              ? 'btn btn-lg btn-success'
+                              : 'btn btn-lg btn-danger'
+                          "
+                          @click="destroy(data.item)"
+                          v-tooltip.botton="
+                            'Al dar click eliminará, desactivará o activara el expediente'
+                          "
+                          ><i
+                            :class="
+                              data.item.deleted_at
+                                ? 'fa fa-thumbs-o-up'
+                                : 'fa fa-thumbs-o-down'
+                            "
+                          ></i
+                        ></a>
+                      </div>
+                    </template>
+                  </b-table>
+                </div>
+                <div class="col-sm-12 col-md-12 col-lg-12">
+                  <label v-if="totalRows > 0"
+                    >Total: {{ totalRows }} registros en el sistema.</label
+                  >
+                  <div class="text-center">
+                    <label v-if="totalRows === 0"
+                      >No hay registros que mostrar</label
+                    >
+                  </div>
+                </div>
+                <div class="col-sm-12 col-md-12 col-lg-12">
+                  <label class="pull-right"
+                    ><b-pagination
+                      :total-rows="totalRows"
+                      :per-page="perPage"
+                      v-model="currentPage"
+                      class="my-0 text-center"
+                  /></label>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Modal para mostrar los requisistos faltantes -->
+    <div
+      :class="abrirModalRequisitos"
+      data-backdrop="static"
+      v-bind:style="styleObjectRequisitos"
+      v-loading="loading"
+    >
+      <div class="modal-dialog modal-lg" style="width: 80%; height: 80%">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h2 class="modal-title">
+              Requisitos faltantes para la actuación {{ barcode }}
+              <button
+                type="button"
+                @click="cancel_showRequisitos"
+                class="btn btn-danger btn-xs pull-right"
+              >
+                <i class="fa fa-close"></i>
+              </button>
+            </h2>
+          </div>
+
+          <div
+            class="modal-body text-center"
+            style="overflow-y: auto; height: 100%"
+            v-if="modalRequisitos"
+          >
+            <h3 class="text-center">REQUISITOS PARA EL TRÁMITE <br /></h3>
+            <br /><br />
+            <pdf
+              v-for="i in numPages"
+              :key="i"
+              :src="src"
+              :page="i"
+              style="display: inline-block; width: 10%"
+            ></pdf>
+              <!-- <div class="row"> -->
+                <div class="col-sm-12 col-md-2 col-lg-2">
+                  <div class="form-group text-center">
+                    <label for="folio_inicial">Cantidad de folios</label>
+                    <h3>
+                      <strong> {{ total_folios }} </strong>
+                    </h3>
+                  </div>
+                </div>
+                <div class="col-sm-12 col-md-10 col-lg-10">
+                  <div class="form-group">
+                    <label for="folio_correcion"
+                      >Si la cantidad de folios es incorrecta, ingrese el
+                      numero correcto:</label
+                    >
+                    <input
+                      v-model="forms.folio_correcion"
+                      type="text"
+                      class="form-control"
+                      id="folio_correcion"
+                      placeholder="escribir la cantidad de folios correcta"
+                      name="cantidad de folios correcta"
+                      :class="{
+                        input: true,
+                        'has-errors': errors.has(
+                          'cantidad de folios correcta'
+                        ),
+                      }"
+                    />
+                    <FormError
+                      :attribute_name="'cantidad de folios correcta'"
+                      :errors_form="errors"
+                    >
+                    </FormError>
+                  </div>
+                </div>
+              <!-- </div> -->
+            <template v-for="(item, index) in requisitos">
+            <div
+              v-bind:key="index"
+              class="col-sm-12 col-md-12 col-lg-12"
+            >
+              <label for="">{{ item.nombre }}</label>
+              <div class="input-group input-group-lg">
+                <div class="input-group-btn">
+                  <button
+                    type="button"
+                    class="btn btn-primary btn-small btn-disabled"
+                  >
+                    Adjuntar documento |
+                    <small>Páginas {{ item.folio }}</small>
+                  </button>
+                </div>
+                <input
+                  type="file"
+                  accept="application/pdf"
+                  :data-vv-name="item.requisito"
+                  v-validate="'mimes:application/pdf'"
+                  :name="item.requisito"
+                  @change="onFileChange($event, item)"
+                  ref="inputFile"
+                  class="form-control inputfile inputfile-6"
+                />
+                <FormError
+                  :attribute_name="item.requisito"
+                  :errors_form="errors"
+                >
+                </FormError>
+              </div>
+              <br>
+            </div>
+          </template>
+          </div>
+
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn btn-primary btn-block btn-lg pull-right"
+              @click="updateRequisitos"
+            >
+              <i class="fa fa-save"></i> Actualizar requisitos
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal para mostrar los datos para editar -->
+    <div
+      :class="abrirModalEditar"
+      data-backdrop="static"
+      v-bind:style="styleObjectEditar"
+      v-loading="loading"
+    >
+      <div class="modal-dialog modal-lg" style="width: 80%; height: 80%">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h2 class="modal-title">
+              {{ titleEditar }}
+              <button
+                type="button"
+                @click="cancel_showEditar"
+                class="btn btn-danger btn-xs pull-right"
+              >
+                <i class="fa fa-close"></i>
+              </button>
+            </h2>
+          </div>
+
+          <div
+            class="modal-body text-center"
+            style="overflow-y: auto; height: 100%"
+            v-if="modalEditar"
+          >
+            <div class="row">
+              <div class="col-sm-12 col-md-3 col-lg-3">
+                <div class="form-group">
+                  <label for="fecha_ingreso">Fecha de ingreso</label>
+                  <date-picker
+                    v-model="form.fecha_ingreso"
+                    :input-props="{
+                      class: 'form-control',
+                      placeholder: 'seleccione la fecha de ingreso',
+                    }"
+                    format="DD-MM-YYYY"
+                    placeholder="seleccionar fecha"
+                    data-vv-name="fecha de ingreso"
+                    v-validate="'required|date_format:dd/MM/yyyy'"
+                    show-caps
+                  ></date-picker>
+                  <FormError
+                    :attribute_name="'fecha de ingreso'"
+                    :errors_form="errors"
+                  >
+                  </FormError>
+                </div>
+              </div>
+            </div>
+            <div class="row">
+              <div class="col-sm-12 col-md-12 col-lg-12">
+                <div class="form-group">
+                  <label for="nombre_expediente">Nombre del expediente</label>
+                  <input
+                    v-model="form.nombre_expediente"
+                    type="text"
+                    class="form-control"
+                    id="nombre_expediente"
+                    placeholder="escribir el nombre del expediente"
+                    name="nombre del expediente"
+                    v-validate="'required|min:1|max:100'"
+                    :class="{
+                      input: true,
+                      'has-errors': errors.has('nombre del expediente'),
+                    }"
+                    @input="
+                      form.nombre_expediente = $event.target.value.toUpperCase()
+                    "
+                  />
+                  <FormError
+                    :attribute_name="'nombre del expediente'"
+                    :errors_form="errors"
+                  >
+                  </FormError>
+                </div>
+              </div>
+            </div>
+            <div class="row">
+              <div class="col-sm-12 col-md-3 col-lg-3">
+                <div class="form-group">
+                  <label for="nit">NIT</label>
+                  <input
+                    v-model="form.nit"
+                    type="text"
+                    class="form-control"
+                    id="nit"
+                    placeholder="escribir el número de nit"
+                    name="número de nit"
+                    v-validate="
+                      'required|min:5|max:15|regex:^[0-9]+(-?[0-9kK])?$'
+                    "
+                    :class="{
+                      input: true,
+                      'has-errors': errors.has('número de nit'),
+                    }"
+                    @input="form.nit = $event.target.value.toUpperCase()"
+                  />
+                  <FormError
+                    :attribute_name="'número de nit'"
+                    :errors_form="errors"
+                  >
+                  </FormError>
+                </div>
+              </div>
+              <div class="col-sm-12 col-md-9 col-lg-9">
+                <div class="form-group">
+                  <label for="razon_social">Razon Social</label>
+                  <input
+                    v-model="form.razon_social"
+                    type="text"
+                    class="form-control"
+                    id="razon_social"
+                    placeholder="escribir el nombre de la razon social"
+                    name="nombre de la razon social"
+                    v-validate="'required|min:1|max:100'"
+                    :class="{
+                      input: true,
+                      'has-errors': errors.has('nombre de la razon social'),
+                    }"
+                    @input="
+                      form.razon_social = $event.target.value.toUpperCase()
+                    "
+                  />
+                  <FormError
+                    :attribute_name="'nombre de la razon social'"
+                    :errors_form="errors"
+                  >
+                  </FormError>
+                </div>
+              </div>
+            </div>
+            <div class="row">
+              <div class="col-sm-12 col-md-12 col-lg-12">
+                <div class="form-group">
+                  <label for="observacion">Observación</label>
+                  <textarea
+                    v-model="form.observacion"
+                    class="form-control"
+                    id="observacion"
+                    placeholder="escribir la observación del expediente"
+                    name="observación"
+                    v-validate="'max:250'"
+                    :class="{
+                      input: true,
+                      'has-errors': errors.has('observación'),
+                    }"
+                    @input="
+                      form.observacion = $event.target.value.toUpperCase()
+                    "
+                  ></textarea>
+                  <FormError
+                    :attribute_name="'observación'"
+                    :errors_form="errors"
+                  ></FormError>
+                </div>
+              </div>
+            </div>
+            <div
+              class="row"
+              v-if="form.tipo_razon_social != 'PERSONA INDIVIDUAL'"
+            >
+              <div class="col-md-12">
+                <h3>{{ actuacion_selected.tipo_razon_social }}</h3>
+              </div>
+              <div
+                class="col-sm-12 col-md-12 col-lg-12"
+                v-if="'PERSONA JURIDICA'"
+              >
+                <div class="form-group">
+                  <label for="representante.representacion"
+                    >Tipo de representación</label
+                  >
+                  <multiselect
+                    v-model="representante.representacion"
+                    :options="representaciones"
+                    placeholder="Seleccione uno por favor"
+                    :searchable="true"
+                    :allow-empty="true"
+                    :preselect-first="false"
+                    data-vv-name="tipo de representación"
+                    v-validate="'required'"
+                    data-vv-scope="representante"
+                    :show-labels="false"
+                    :show-no-result="true"
+                    label="nombre"
+                    track-by="id"
+                  >
+                    <span slot="noResult">No se encontró información</span>
+                  </multiselect>
+                  <FormError
+                    :attribute_name="'representante.tipo de representación'"
+                    :errors_form="errors"
+                  >
+                  </FormError>
+                </div>
+              </div>
+              <div class="col-sm-12 col-md-3 col-lg-3">
+                <div class="form-group">
+                  <label for="nit">CUI</label>
+                  <autocomplete
+                    :search="buscar_nit_representante"
+                    placeholder="Buscar número de CUI"
+                    aria-label="Buscar número de CUI"
+                    @submit="seleccionarNITR"
+                    :get-result-value="getResultValueR"
+                  >
+                  </autocomplete>
+                </div>
+              </div>
+              <div
+                v-if="ver_tags_representante"
+                class="col-sm-12 col-md-9 col-lg-9"
+              >
+                <div class="form-group">
+                  <label for="razon_social">Nombre de la Persona</label>
+                  <input
+                    v-model="representante.razon_social"
+                    type="text"
+                    class="form-control"
+                    id="razon_social"
+                    placeholder="escribir el nombre de la persona"
+                    name="nombre de la persona"
+                    v-validate="'required|min:1|max:100'"
+                    data-vv-scope="representante"
+                    :class="{
+                      input: true,
+                      'has-errors': errors.has(
+                        'representante.nombre de la persona'
+                      ),
+                    }"
+                    @input="
+                      representante.razon_social = $event.target.value.toUpperCase()
+                    "
+                  />
+                  <FormError
+                    :attribute_name="'representante.nombre de la persona'"
+                    :errors_form="errors"
+                  >
+                  </FormError>
+                </div>
+              </div>
+              <div
+                v-if="ver_tags_representante"
+                class="col-sm-12 col-md-4 col-lg-4"
+              >
+                <div class="form-group">
+                  <label for="tipo_razon_social">Número de teléfono</label>
+                  <vue-phone-number-input
+                    v-model="numero_representante"
+                    default-country-code="GT"
+                    size="lg"
+                    :translations="translations"
+                    show-code-on-list
+                    @update="validar_numero_representante($event)"
+                    v-validate="'required'"
+                    data-vv-name="número de teléfono"
+                    data-vv-scope="representante"
+                    required
+                  />
+                  <FormError
+                    :attribute_name="'representante.número de teléfono'"
+                    :errors_form="errors"
+                  ></FormError>
+                </div>
+              </div>
+              <div
+                v-if="ver_tags_representante"
+                class="col-sm-12 col-md-4 col-lg-4"
+              >
+                <div class="form-group">
+                  <label for="email">Correo electrónico</label>
+                  <input
+                    v-model="representante.email"
+                    type="text"
+                    class="form-control"
+                    placeholder="escribir el correo electrónico"
+                    name="correo electrónico"
+                    v-validate="'required|min:3|max:50|email'"
+                    data-vv-scope="representante"
+                    :class="{
+                      input: true,
+                      'has-errors': errors.has(
+                        'representante.correo electrónico'
+                      ),
+                    }"
+                    @input="
+                      representante.email = $event.target.value.toLowerCase()
+                    "
+                  />
+                  <FormError
+                    :attribute_name="'representante.correo electrónico'"
+                    :errors_form="errors"
+                  >
+                  </FormError>
+                </div>
+              </div>
+              <div
+                v-if="ver_tags_representante"
+                class="col-sm-12 col-md-12 col-lg-12"
+              >
+                <div class="form-group">
+                  <label for="municipio_id"
+                    >Continente - País, Departamento, Municipio</label
+                  >
+                  <multiselect
+                    v-model="representante.municipio_id"
+                    :options="municipios"
+                    placeholder="Seleccione uno por favor"
+                    :searchable="true"
+                    :allow-empty="true"
+                    :preselect-first="false"
+                    data-vv-name="municipio"
+                    data-vv-scope="representante"
+                    v-validate="'required'"
+                    :show-labels="false"
+                    :show-no-result="true"
+                    label="nombre"
+                    track-by="id"
+                  >
+                    <span slot="noResult">No se encontró información</span>
+                  </multiselect>
+                  <FormError
+                    :attribute_name="'representante.municipio'"
+                    :errors_form="errors"
+                  >
+                  </FormError>
+                </div>
+              </div>
+              <div
+                v-if="ver_tags_representante"
+                class="col-sm-12 col-md-12 col-lg-12"
+              >
+                <div class="form-group">
+                  <label for="nombre">Ubicación</label>
+                  <input
+                    v-model="representante.nombre"
+                    type="text"
+                    class="form-control"
+                    placeholder="escribir la ubicación"
+                    name="ubicación"
+                    v-validate="'required|min:3|max:50'"
+                    data-vv-scope="representante"
+                    :class="{
+                      input: true,
+                      'has-errors': errors.has('representante.ubicación'),
+                    }"
+                    @input="
+                      representante.nombre = $event.target.value.toUpperCase()
+                    "
+                  />
+                  <FormError
+                    :attribute_name="'representante.ubicación'"
+                    :errors_form="errors"
+                  >
+                  </FormError>
+                </div>
+              </div>
+
+              <div class="col-sm-12 col-md-12 col-lg-12">
+                <button
+                  type="button"
+                  class="btn btn-danger btn-sm pull-left"
+                  @click="clearDataR"
+                >
+                  <i class="fa fa-ban"></i> Cancelar
+                </button>
+                <button
+                  v-if="esconder_representante && representante.nit"
+                  type="button"
+                  class="btn btn-success btn-sm pull-right"
+                  @click="agregarRepresentante('representante')"
+                >
+                  <i class="fa fa-save"></i> Agregar representante
+                </button>
+              </div>
+            </div>
+
+            <div
+              class="row"
+              v-if="
+                ver_tags_representante &&
+                form.tipo_razon_social == 'PERSONA INDIVIDUAL'
+              "
+            >
+              <div class="col-md-12">
+                <h3>{{ actuacion_selected.tipo_razon_social }}</h3>
+              </div>
+              <div class="col-sm-12 col-md-3 col-lg-3">
+                <div class="form-group">
+                  <label for="nit">CUI</label>
+                  <input
+                    v-model="representante.nit"
+                    type="text"
+                    class="form-control"
+                    id="nit"
+                    placeholder="escribir el número de DPI"
+                    name="número de DPI"
+                    v-validate="'required|digits:13'"
+                    :class="{
+                      input: true,
+                      'has-errors': errors.has('número de DPI'),
+                    }"
+                    @input="
+                      representante.nit = $event.target.value.toUpperCase()
+                    "
+                  />
+                  <FormError
+                    :attribute_name="'número de DPI'"
+                    :errors_form="errors"
+                  >
+                  </FormError>
+                </div>
+              </div>
+              <div class="col-sm-12 col-md-9 col-lg-9">
+                <div class="form-group">
+                  <label for="razon_social">Nombre de la Persona</label>
+                  <input
+                    v-model="representante.razon_social"
+                    type="text"
+                    class="form-control"
+                    id="razon_social"
+                    placeholder="escribir el nombre de la persona"
+                    name="nombre de la persona"
+                    v-validate="'required|min:1|max:100'"
+                    :class="{
+                      input: true,
+                      'has-errors': errors.has('nombre de la persona'),
+                    }"
+                    @input="
+                      representante.razon_social = $event.target.value.toUpperCase()
+                    "
+                  />
+                  <FormError
+                    :attribute_name="'nombre de la persona'"
+                    :errors_form="errors"
+                  >
+                  </FormError>
+                </div>
+              </div>
+              <div class="col-sm-12 col-md-4 col-lg-4">
+                <div class="form-group">
+                  <label for="tipo_razon_social">Número de teléfono</label>
+                  <vue-phone-number-input
+                    v-model="numero_representante"
+                    default-country-code="GT"
+                    size="lg"
+                    :translations="translations"
+                    show-code-on-list
+                    @update="validar_numero_representante($event)"
+                    v-validate="'required'"
+                    data-vv-name="número de teléfono"
+                    required
+                  />
+                  <FormError
+                    :attribute_name="'número de teléfono'"
+                    :errors_form="errors"
+                  ></FormError>
+                </div>
+              </div>
+              <div class="col-sm-12 col-md-4 col-lg-4">
+                <div class="form-group">
+                  <label for="email">Correo electrónico</label>
+                  <input
+                    v-model="representante.email"
+                    type="text"
+                    class="form-control"
+                    placeholder="escribir el correo electrónico"
+                    name="correo electrónico"
+                    v-validate="'required|min:3|max:50|email'"
+                    :class="{
+                      input: true,
+                      'has-errors': errors.has('correo electrónico'),
+                    }"
+                    @input="
+                      representante.email = $event.target.value.toLowerCase()
+                    "
+                  />
+                  <FormError
+                    :attribute_name="'correo electrónico'"
+                    :errors_form="errors"
+                  >
+                  </FormError>
+                </div>
+              </div>
+              <div class="col-sm-12 col-md-12 col-lg-12">
+                <div class="form-group">
+                  <label for="municipio_id"
+                    >Continente - País, Departamento, Municipio</label
+                  >
+                  <multiselect
+                    v-model="representante.municipio_id"
+                    :options="municipios"
+                    placeholder="Seleccione uno por favor"
+                    :searchable="true"
+                    :allow-empty="true"
+                    :preselect-first="false"
+                    data-vv-name="municipio"
+                    v-validate="'required'"
+                    :show-labels="false"
+                    :show-no-result="true"
+                    label="nombre"
+                    track-by="id"
+                  >
+                    <span slot="noResult">No se encontró información</span>
+                  </multiselect>
+                  <FormError
+                    :attribute_name="'municipio'"
+                    :errors_form="errors"
+                  >
+                  </FormError>
+                </div>
+              </div>
+              <div class="col-sm-12 col-md-12 col-lg-12">
+                <div class="form-group">
+                  <label for="nombre">Ubicación</label>
+                  <input
+                    v-model="representante.nombre"
+                    type="text"
+                    class="form-control"
+                    placeholder="escribir la ubicación"
+                    name="ubicación"
+                    v-validate="'required|min:3|max:50'"
+                    :class="{
+                      input: true,
+                      'has-errors': errors.has('ubicación'),
+                    }"
+                    @input="
+                      representante.nombre = $event.target.value.toUpperCase()
+                    "
+                  />
+                  <FormError
+                    :attribute_name="'ubicación'"
+                    :errors_form="errors"
+                  >
+                  </FormError>
+                </div>
+              </div>
+            </div>
+            <hr />
+            <div
+              class="row"
+              v-if="
+                actuacion_selected.tipo_razon_social != 'PERSONA INDIVIDUAL'
+              "
+            >
+              <template v-for="(item, index) in form.representantes">
+                <div class="col-md-4" v-bind:key="index">
+                  <div class="box box-widget">
+                    <div class="widget-user-header bg-blue">
+                      <br />
+                      <h3 class="widget-user-username">
+                        {{ item.razon_social }}
+                      </h3>
+                      <h5 class="widget-user-desc">{{ item.nit }}</h5>
+                      <h5 class="widget-user-desc">
+                        {{ item.representacion.nombre }}
+                      </h5>
+                      <br />
+                    </div>
+                    <div class="box-footer">
+                      <a :href="item.url">{{ item.numero }}</a>
+                      <hr />
+                      <a :href="'mailto:' + item.email">{{ item.email }}</a>
+                      <hr />
+                      <a>{{ item.completo }}</a>
+                      <a
+                        class="btn btn-block btn-danger btn-small text-center"
+                        @click="quitarRepresentante(item)"
+                        >Eliminar</a
+                      >
+                    </div>
+                  </div>
+                </div>
+              </template>
+            </div>
+          </div>
+
+          <div class="modal-footer">
+            <button
+              v-if="ver_tags_representante && esconder_representante"
+              type="button"
+              class="btn btn-warning btn-block btn-lg pull-right"
+              @click="editarA"
+            >
+              <i class="fa fa-save"></i> Actualizar información
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal para mostrar los documentos de la actuacion seleccionada -->
+    <div
+      :class="abrirModalDocumento"
+      data-backdrop="static"
+      v-bind:style="styleObjectDocumento"
+      v-loading="loading"
+    >
+      <div class="modal-dialog modal-lg" style="width: 80%; height: 80%">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h2 class="modal-title">
+              {{ titleDocumento }}
+              <button
+                type="button"
+                @click="cancel_showDocumento"
+                class="btn btn-danger btn-xs pull-right"
+              >
+                <i class="fa fa-close"></i>
+              </button>
+            </h2>
+          </div>
+
+          <div
+            class="modal-body text-center"
+            style="overflow-y: auto; height: 100%"
+            v-if="modalDocumento"
+          >
+            <div class="row">
+              <div class="col-md-12">
+                <multiselect
+                  @input="verDocumento"
+                  v-model="documento_seleccionado"
+                  :options="documentos"
+                  placeholder="Seleccione uno por favor"
+                  :searchable="true"
+                  :allow-empty="true"
+                  :preselect-first="false"
+                  :show-labels="false"
+                  :show-no-result="true"
+                  label="nombre"
+                  track-by="id"
+                >
+                  <span slot="noResult">No se encontró información</span>
+                </multiselect>
+              </div>
+              <div class="col-md-12" v-if="show">
+                <embed
+                  :src="src"
+                  type="application/pdf"
+                  width="100%"
+                  height="100%"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal para mostrar los pasos a los que puede ir un expediente-->
+    <div
+      :class="abrirModal"
+      data-backdrop="static"
+      v-bind:style="styleObject"
+      v-loading="loading"
+    >
+      <div class="modal-dialog modal-lg" style="width: 50%">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h2 class="modal-title">
+              {{ title
+              }}<button
+                type="button"
+                @click="cancel_show"
+                class="btn btn-danger btn-xs pull-right"
+              >
+                <i class="fa fa-close"></i>
+              </button>
+            </h2>
+          </div>
+
+          <div
+            class="modal-body text-center"
+            style="overflow-y: auto; height: 100%"
+            v-if="modal"
+          >
+            <div class="row">
+              <div
+                class="col-sm-12 col-md-12 col-lg-12"
+                v-if="botones_siguiente.length > 0"
+              >
+                <h3>Pasos a donde puede ir el trámite</h3>
+                <template v-for="(item, index) in botones_siguiente">
+                  <a
+                    v-bind:key="item.nombre + index"
+                    @click="seguimiento_siguiente(item)"
+                    v-tooltip.botton="
+                      'Al dar click, el proceso continuará en el paso número ' +
+                      item.siguiente_paso
+                    "
+                    class="btn btn-primary btn-block btn-lg"
+                    ><span>{{ item.nombre }}</span></a
+                  >
+                  <br /><br />
+                </template>
+              </div>
+              <div
+                class="col-sm-12 col-md-12 col-lg-12"
+                v-if="botones_atras.length > 0"
+              >
+                <hr />
+              </div>
+              <div
+                class="col-sm-12 col-md-12 col-lg-12"
+                v-if="botones_atras.length > 0"
+              >
+                <h3>Pasos a donde puede regresar el trámite</h3>
+                <template v-for="(item, index) in botones_atras">
+                  <a
+                    v-bind:key="item.nombre + index"
+                    @click="seguimiento_atras(item)"
+                    v-tooltip.botton="
+                      'Al dar click, el proceso regresará al paso número ' +
+                      item.atras_paso
+                    "
+                    class="btn btn-success btn-block btn-lg"
+                    ><span>{{ item.nombre }}</span></a
+                  >
+                  <br /><br />
+                </template>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal para ingresar razon de congelacion de un expediente-->
+    <div
+      :class="abrirModalCongelar"
+      data-backdrop="static"
+      v-bind:style="styleObjectCongelar"
+      v-loading="loading"
+    >
+      <div class="modal-dialog modal-lg" style="width: 80%">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h2 class="modal-title">
+              Razon de congelación para la actuación {{ barcode }}
+              <button
+                type="button"
+                @click="cancel_showCongelar"
+                class="btn btn-danger btn-xs pull-right"
+              >
+                <i class="fa fa-close"></i>
+              </button>
+            </h2>
+          </div>
+
+          <div
+            class="modal-body text-center"
+            style="overflow-y: auto; height: auto"
+            v-if="modalCongelar"
+          >
+            <div class="row">
+              <div class="content">
+
+                <div class="col-md-12">
+                  <div class="form-group">
+                    <label for="unidad_id">Tipo de Congelacion</label>
+                    <multiselect
+                      v-model="congelacion.tipo"
+                      :options="tipoCongelaciones"
+                      placeholder="Seleccione uno porfavor"
+                      :searchable="true"
+                      :allow-empty="false"
+                      data-vv-name="unidad"
+                      v-validate="'required'"
+                      :show-labels="false"
+                      label="nombre"
+                      track-by="id"
+                    >
+                      <span slot="noResult">Ningún registro encontrado</span>
+                    </multiselect>
+                    <FormError
+                      :attribute_name="'unidad'"
+                      :errors_form="errors"
+                    >
+                    </FormError>
+                  </div>
+                </div>
+
+                <div v-if="congelacion.agregar===false" class="col-md-12">
+                  <div class="form-group">
+                    <label for="unidad_id">Razon de Congelacion</label>
+                    <multiselect
+                      v-model="congelacion.razon"
+                      :options="razonCongelaciones"
+                      placeholder="Seleccione uno porfavor"
+                      :searchable="true"
+                      :allow-empty="false"
+                      data-vv-name="unidad"
+                      v-validate="'required'"
+                      :show-labels="false"
+                      label="nombre"
+                      track-by="id"
+                    >
+                      <span slot="noResult">Ningún registro encontrado</span>
+                    </multiselect>
+                    <FormError
+                      :attribute_name="'unidad'"
+                      :errors_form="errors"
+                    >
+                    </FormError>
+                  </div>
+                </div>
+
+                <div class="col-md-4">
+                  <div class="form-group">
+                    <enhanced-check
+                      :label="congelacion.agregar ? 'LA RAZON DE CONGELACION NO EXISTE' : 'LA RAZON DE CONGELACION YA EXISTE'"
+                      subClass="success"
+                      :animate="true"
+                      :inline="false"
+                      v-model="congelacion.agregar"
+                      v-validate="'required'"
+                      data-vv-name="adjuntar documento"
+                      data-vv-scope="paso"
+                    ></enhanced-check>
+                    <FormError :attribute_name="'paso.adjuntar documento'" :errors_form="errors">
+                    </FormError>
+                  </div>
+                </div>
+
+                <div v-if="congelacion.agregar" class="col-sm-12 col-md-12 col-lg-12">
+                  <div class="form-group">
+                    <label for="observacion">Razon de Congelacion</label>
+                    <textarea
+                      cols="30"
+                      rows="10"
+                      v-model="congelacion.razon"
+                      type="textarea"
+                      class="form-control"
+                      id="observacion"
+                      placeholder="escriba la razon"
+                      name="observacion"
+                      v-validate="'required|min:3|max:2500'"
+                      :class="{
+                        input: true,
+                        'has-errors': errors.has('observacion'),
+                      }"
+                      @input="
+                        form.observacion = $event.target.value.toUpperCase()
+                      "
+                    />
+                    <FormError
+                      :attribute_name="'observacion'"
+                      :errors_form="errors"
+                    >
+                    </FormError>
+                  </div>
+                </div>
+                <div v-if="congelacion.agregar" class="col-sm-12 col-md-12 col-lg-12 text-red">
+                  <small
+                    >La información que ingrese en este formulario es la que
+                    aparecera en el seguimiento histórico de la actuación
+                    {{ barcode }}.
+                  </small>
+                </div>
+                <div class="col-sm-12 col-md-12 col-lg-12">
+                    <div class="box-footer">
+                      <button
+                        type="button"
+                        class="btn btn-danger btn-block btn-large pull-left"
+                        @click="cleanCongelacion()"
+                      >
+                        <i class="fa fa-ban"></i> Cancelar
+                      </button>
+                      <button
+                        type="button"
+                        class="btn btn-primary btn-block btn-large pull-right"
+                        @click="guardarCongelacion()"
+                      >
+                        <i class="fa fa-save"></i> Guardar
+                      </button>
+                    </div>
+                  </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script>
+import FormError from "../shared/FormError";
+import pdf from "vue-pdf";
+import DatePicker from "vue2-datepicker";
+import "vue2-datepicker/index.css";
+import "vue2-datepicker/locale/es";
+import moment from "moment";
+import {
+  EnhancedCheck,
+  EnhancedCheckGroup,
+  EnhancedCheckRadio,
+  EnhancedToggle,
+} from "vue-enhanced-check";
+export default {
+  name: "MisExpedientes",
+  components: {
+    FormError,
+    EnhancedCheck,
+    EnhancedCheckGroup,
+    EnhancedCheckRadio,
+    EnhancedToggle,
+    pdf,
+    DatePicker,
+    moment,
+  },
+  data() {
+    return {
+      loading: false,
+      items: [],
+      documentos: [],
+
+      numero_representante: null,
+      esconder_representante: false,
+      barcode: "",
+
+
+      // Modal paso
+      abrirModal: "modal fade",
+      styleObject: {},
+      modal: false,
+
+      // Modal razon Congelar
+      abrirModalCongelar: "modal fade",
+      styleObjectCongelar: {},
+      modalCongelar: false,
+
+      tipoCongelaciones: [],
+      razonCongelaciones: [],
+      congelacion: {
+        tipo: null,
+        razon: '',
+        agregar: false,
+        codigo_barra: null,
+      },
+
+      // Modal Documento
+      abrirModalDocumento: "modal fade",
+      styleObjectDocumento: {},
+      modalDocumento: false,
+
+      documento_seleccionado: null,
+
+      // Modal Editar
+      abrirModalEditar: "modal fade",
+      styleObjectEditar: {},
+      modalEditar: false,
+
+      // Modal Requisitos
+      abrirModalRequisitos: "modal fade",
+      styleObjectRequisitos: {},
+      modalRequisitos: false,
+
+      requisitos: [],
+      pendiente: [],
+      cargado: [],
+
+      fields: [
+        { key: "numero_expediente", label: "Numero de Expediente", sortable: true },
+        { key: "codigo_barra", label: "Código del Expediente", sortable: true },
+        { key: "tipo_tramite", label: "Trámite", sortable: true },
+        {
+          key: "nombre_expediente",
+          label: "Nombre del Expediente",
+          sortable: true,
+        },
+        { key: "razon_social", label: "Razon Social", sortable: true },
+        { key: "folio_actual", label: "Cantidad de Folios", sortable: true },
+        {
+          key: "folio_inicial",
+          label: "Cantidad de Folios Inicial",
+          sortable: true,
+        },
+        { key: "fecha_ingreso", label: "Fecha de Ingreso", sortable: true },
+        { key: "usuario", label: "¿Quién creo el Expediente?", sortable: true },
+        { key: "estado", label: "Estado Actual", sortable: false },
+        { key: "opcion", label: "Acciones" },
+      ],
+
+      search: "",
+      filter: null,
+      currentPage: 1,
+      perPage: 5,
+      totalRows: 0,
+      pageOptions: [5, 10, 25, 100],
+      showStringEmpty: "no hay registros que mostrar",
+      numPages: undefined,
+
+      actuacion_selected: null,
+      municipios: [],
+      representaciones: [],
+
+      form: {
+        id: 0,
+        principal: false,
+        fecha_ingreso: null,
+        nombre_expediente: "",
+        observacion: "",
+        nit: null,
+        razon_social: "",
+        patente: "",
+        representantes: [],
+        tipo_razon_social: "",
+      },
+
+      forms: {
+        folio_correcion: "",
+        barcode: "",
+        expediente :null,
+        requisitos: [],
+        folio_inicial: 0,
+      },
+
+      ver_tags_representante: false,
+
+      representante: {
+        nit: null,
+        razon_social: "",
+        numero: null,
+        codigo_area: null,
+        pais: null,
+        url: null,
+        notificar_telefono: true,
+        email: "",
+        notificar_email: true,
+        municipio_id: null,
+        nombre: "",
+        notificar_direccion: true,
+        representacion: [],
+        completo: "",
+      },
+
+      translations: {
+        countrySelectorLabel: "Código de país",
+        countrySelectorError: "Elige un país",
+        phoneNumberLabel: "Número de teléfono",
+        example: "Ejemplo :",
+      },
+
+      expediente_id: 0,
+      numero_expediente: "",
+      tipo_tramite: "",
+
+      botones_siguiente: [],
+      botones_atras: [],
+
+      show: false,
+      src: "",
+    };
+  },
+  created() {
+    let self = this;
+    self.getAll();
+    // let self = this;
+    // self.expediente_id = atob(self.$route.params.expediente_id);
+    // self.numero_expediente = atob(
+    //   self.$route.params.numero_expediente
+    // ).toUpperCase();
+    // self.tipo_tramite = atob(self.$route.params.tipo_tramite);
+    // // self.buscar_requisitos(self.barcode)
+    // self.getPromise();
+  },
+  computed: {
+    total_folios() {
+      this.forms.requisitos.forEach((element) => {
+        this.forms.folio_inicial += element.cantidad_folio;
+      });
+      return this.forms.folio_inicial;
+    },
+    title() {
+      let message = "";
+      message = this.actuacion_selected
+        ? "Opciones de la Actuación " + this.actuacion_selected.codigo_barra
+        : "";
+      return message;
+    },
+    titleDocumento() {
+      let message = "";
+      message = this.actuacion_selected
+        ? "Documentos de la Actuación " + this.actuacion_selected.codigo_barra
+        : "";
+      return message;
+    },
+    limitar() {
+      return this.$store.state.roles.some(
+        (item) => item.rol.nombre.toLowerCase() === "administrador"
+      );
+    },
+    titleEditar() {
+      let message = "";
+      message = this.actuacion_selected
+        ? "Información disponible para actualizar en la actuación " +
+          this.actuacion_selected.codigo_barra
+        : "";
+      return message;
+    },
+  },
+  methods: {
+
+    descongelar(barcode){
+      let self = this;
+      self.loading = true;
+      let data = {
+        barcode: null,
+      };
+      data.barcode = barcode;
+      self.$store.state.services.congelacionNuevoService
+        .update(data)
+        .then((r) => {
+          let text = r.data === 1 ? "Se a descongelado el expediente exitosamente" : "A ocurrido un error al intentar descongelar el expediente"
+          self.loading = false;
+          this.getAll();
+          r.data === 1 ? this.$toastr.success(text) : this.$toastr.error(text);
+          console.log('r.data');
+          console.log(r.data);
+        })
+        .catch((r) => {
+          this.$toastr.error("A ocurrido un error al obtener el expediente congelado");
+        });
+    },
+
+    cleanCongelacion(){
+      this.congelacion.razon = '';
+      this.congelacion.agregar = false;
+      this.congelacion.tipo = null;
+    },
+
+    tipos(){
+      let self = this;
+      self.loading = true;
+      console.log(self.congelacion.razon);
+      self.$store.state.services.congelacionNuevoService
+        .getAll()
+        .then((r) => {
+          this.tipoCongelaciones = r.data[1];
+          this.razonCongelaciones = r.data[0];
+          self.loading = false;
+          // self.items = r.data;
+          // self.totalRows = self.items.length;
+        })
+        .catch((r) => {});
+    },
+
+    congelar(item){
+      this.barcode = item.codigo_barra
+      let self = this;
+      self.loading = true;
+
+      self.tipos();
+      self.congelacion.codigo_barra = self.barcode;
+
+      self.styleObjectCongelar.display = "block";
+      self.abrirModalCongelar = "modal fade in";
+      self.modalCongelar = true;
+      self.loading = false;
+
+    },
+
+    getPromise() {
+      this.loading = true;
+      Promise.all([
+        this.getAll(),
+        this.getMunicipio(),
+        this.getRepresentacion(),
+      ])
+        .then(() => {
+          this.loading = false;
+        })
+        .catch((error) => {
+          this.loading = false;
+          this.$toastr.error("Ocurrió un error: " + error, "Error");
+        });
+    },
+
+    guardarCongelacion(){
+      let self = this;
+      self.loading = true;
+      self.$store.state.services.congelacionNuevoService
+        .create(self.congelacion)
+        .then((r) => {
+          self.loading = false;
+          let text = r.data === 1 ? "Se a congelado el expediente exitosamente" : "A ocurrido un error al intentar congelar el expediente"
+          // self.items = r.data;
+          // self.totalRows = self.items.length;
+          this.getAll();
+          this.cancel_showCongelar();
+          self.congelacion.razon = '',
+          self.congelacion.agregar = false;
+          self.congelacion.tipo = null;
+          r.data === 1 ? this.$toastr.success(text) : this.$toastr.error(text);
+        })
+        .catch((r) => {
+          this.$toastr.error("A ocurrido un error al obtener el expediente");
+        });
+    },
+
+    updateRequisitos(){
+      let self = this;
+      self.loading = true;
+      self.$store.state.services.requisitospendientesService
+        .update(this.forms)
+        .then((r) => {
+          self.loading = false;
+          if (r.data === "1") {
+            this.$toastr.success("Requisitos actualizados exitosamente", "Mensaje");
+          } else {
+            this.$toastr.error("A ocurrido un error al intentar actualizar el requisito", "Mensaje");
+          }
+          // this.clearReq();
+          this.forms.barcode= "";
+          this.forms.folio_correcion =0;
+          this.forms.expediente =null;
+          this.forms.requisitos = [];
+          this.pendiente = [];
+          this.cargado = [];
+          this.requisitos = [];
+
+          self.styleObjectRequisitos.display = "";
+          self.abrirModalRequisitos = "modal fade";
+          self.modalRequisitos = false;
+        }).catch((r) => {});
+
+    },
+
+    clearReq(){
+      this.forms.barcode= "";
+      this.forms.expediente =null;
+      while(A.length > 0) {
+        A.pop();
+      }
+    },
+
+    onFileChange(e, item) {
+      this.forms.requisitos.forEach((element) => {
+        if (element.tramite_requisito_id == item.id) {
+          this.forms.requisitos.splice(this.forms.requisitos.indexOf(element), 1);
+          return;
+        }
+      });
+      let files = e.target.files || e.dataTransfer.files;
+      if (!files.length) {
+        return;
+      } else {
+        this.validarDocumento(files[0], item);
+      }
+    },
+
+    validarDocumento(file, item) {
+      let self = this;
+      self.loading = true;
+      let reader = new FileReader();
+      let tamanio = file.size;
+      // let formato = item.formato.toLowerCase();
+      let equivalente = parseFloat(tamanio / 1024);
+      console.log(equivalente, tamanio);
+      let extension = file.name
+        .substring(file.name.lastIndexOf("."));
+        //.toLowerCase();
+      this.numPages = 0;
+
+      // if (
+      //   formato.substring(formato.lastIndexOf(".")) !== extension.toLowerCase()
+      // ) {
+      //   self.$swal("El formato del documeto debe de ser " + formato);
+      //   self.loading = false;
+      // } else {
+        // if (equivalente < parseInt(item.megas) * 1024) {
+          reader.onload = (e) => {
+            this.src = pdf.createLoadingTask(e.target.result);
+            this.src.promise.then((pdf) => {
+              this.numPages = pdf.numPages;
+              item.folio = this.numPages;
+              let objeto = new Object();
+              objeto.cantidad_folio = this.numPages;
+              objeto.nombre = file.name;
+              objeto.path = e.target.result;
+              objeto.tramite_requisito_id = item.tramite_requisito_id;
+              objeto.size = equivalente;
+              // objeto.requisito_id = item.requisito_id;
+              objeto.requisito_id = item.id;
+              objeto.formato_documento_id = item.formato_documento_id;
+              this.forms.folio_inicial =0;
+              self.forms.requisitos.push(objeto);
+
+              self.$swal({
+                position: "top-end",
+                type: "success",
+                title: "Documento agregado correctamente",
+                showConfirmButton: false,
+                timer: 1500,
+              });
+              self.loading = false;
+            });
+          };
+
+          reader.readAsDataURL(file);
+        // } else {
+        //   self.$swal(
+        //     "El el tamaño del documento debe de tener menos de " +
+        //       item.megas +
+        //       " MB y el documento tiene " +
+        //       equivalente +
+        //       " MB"
+        //   );
+        //   self.loading = false;
+        // }
+      // }
+    },
+
+    onFiltered(filteredItems) {
+      this.totalRows = filteredItems.length;
+      this.currentPage = 1;
+    },
+
+    getAll() {
+      let self = this;
+      self.loading = true;
+
+      self.$store.state.services.actuacionService
+        .getAll()
+        .then((r) => {
+          self.loading = false;
+          self.items = r.data;
+          console.log('self.items');
+          console.log(self.items);
+          self.totalRows = self.items.length;
+        })
+        .catch((r) => {});
+    },
+
+    //funcion para eliminar registro
+    destroy(data) {
+      let self = this;
+      let title = !data.deleted_at ? "Desactivar" : "Activar";
+      let type = !data.deleted_at ? "error" : "success";
+      self
+        .$swal({
+          title: title,
+          text: "¿Está seguro de realizar esta acción?",
+          type: type,
+          showCancelButton: true,
+        })
+        .then((result) => {
+          if (result.value) {
+            self.loading = true;
+            self.$store.state.services.actuacionService
+              .destroy(data)
+              .then((r) => {
+                self.loading = false;
+
+                if (r.response) return;
+
+                this.$toastr.success(r.data, "Mensaje");
+                self.getAll();
+              })
+              .catch((r) => {
+                console.log(r);
+              });
+          }
+        });
+    },
+
+    showOptions(item) {
+      let self = this;
+      if (!item.completo) {
+        self.botones_siguiente = [];
+        self.botones_atras = [];
+        if (item[0]) {
+          self.loading = true;
+          self.actuacion_selected = item[0];
+          self.$refs.selectableTable.clearSelected();
+          self.$store.state.services.unidadtramiteService
+            .getBotones(item[0].tipo_tramite_id, item[0].id)
+            .then((r) => {
+              self.loading = false;
+
+              if (r.response) return;
+
+              if (r.data.finalizado) {
+                this.$toastr.warning(r.data.message_s.toUpperCase(), "Mensaje");
+                return;
+              }
+
+              if (r.data.message_s) {
+                this.$toastr.warning(r.data.message_s.toUpperCase(), "Mensaje");
+              }
+
+              if (r.data.message_a) {
+                this.$toastr.warning(r.data.message_a.toUpperCase(), "Mensaje");
+              }
+
+              self.botones_siguiente = r.data.siguiente;
+              self.botones_atras = r.data.atras;
+              self.styleObject.display = "block";
+              self.abrirModal = "modal fade in";
+              self.modal = true;
+            })
+            .catch((r) => {});
+        }
+      }
+    },
+
+    cancel_show() {
+      let self = this;
+      this.actuacion_selected = null;
+      self.styleObject.display = "";
+      self.abrirModal = "modal fade";
+      self.modal = false;
+      this.$refs.selectableTable.clearSelected();
+    },
+
+    cancel_showCongelar() {
+      let self = this;
+      this.actuacion_selected = null;
+      self.styleObjectCongelar.display = "";
+      self.abrirModalCongelar = "modal fade";
+      self.modalCongelar = false;
+      this.$refs.selectableTable.clearSelected();
+    },
+
+    buscar_documento(item) {
+      let self = this;
+      self.loading = true;
+      self.documento_seleccionado = null;
+      self.actuacion_selected = item;
+      self.$store.state.services.actuacionService
+        .getDocument(item.id)
+        .then((r) => {
+          self.documentos = r.data;
+          self.styleObjectDocumento.display = "block";
+          self.abrirModalDocumento = "modal fade in";
+          self.modalDocumento = true;
+          self.loading = false;
+        })
+        .catch((r) => {});
+    },
+
+    cancel_showDocumento() {
+      let self = this;
+      this.actuacion_selected = null;
+      self.styleObjectDocumento.display = "";
+      self.abrirModalDocumento = "modal fade";
+      self.modalDocumento = false;
+    },
+
+    verDocumento(item) {
+      this.show = false;
+      if (item) {
+        let self = this;
+        self.loading = true;
+        self.$store.state.services.documentoactuacionService
+          .get(item.path)
+          .then((r) => {
+            this.show = true;
+            this.src = r.data;
+            self.loading = false;
+          })
+          .catch((r) => {});
+      }
+    },
+
+    crear(id) {
+      let self = this;
+      let url =
+        "/crear/actuacion/" +
+        btoa(self.numero_expediente) +
+        "/" +
+        btoa(self.tipo_tramite) +
+        "/actuacion/" +
+        btoa(id);
+      self.$router.push({ path: url });
+    },
+
+    seguimiento(item) {
+      let self = this;
+      let url =
+        "/exp_mis_seguimiento/" +
+        btoa(item.codigo_barra) +
+        "/" +
+        btoa(item.id) +
+        "/" +
+        btoa(self.expediente_id);
+      self.$router.push({ path: url });
+    },
+
+    seguimiento_siguiente(item) {
+      let self = this
+      // console.log(item, self.tipo_tramite, self.numero_expediente, self.expediente_id)
+      let url =
+        "/exp_seguimiento_siguiente/" +
+        btoa(item.nombre) + //nombre del paso
+        "/" +
+        btoa(item.unidad) + //nombre de la unidad
+        "/" +
+        btoa(item.siguiente_paso) + //número de paso
+        "/" +
+        btoa(item.codigo_barra) + //código de actuación
+        "/" +
+        btoa(item.actuacion_id) + //id de la actuación
+        "/" +
+        btoa(item.id) + //id del paso al que va
+        "/" +
+        btoa(self.tipo_tramite) + //tipo de trámite
+        "/" +
+        btoa(self.numero_expediente.toLowerCase()) + //número de expediente
+        "/" +
+        btoa(self.expediente_id) + //id del expediente
+        "/" +
+        btoa(item.adjuntar) //necesitar adjuntar documento
+
+        self.$router.push({ path: url });
+    },
+
+    seguimiento_atras(item) {
+      let self = this
+      let url =
+        "/exp_seguimiento_atras/" +
+        btoa(item.nombre) + //nombre del paso
+        "/" +
+        btoa(item.unidad) + //nombre de la unidad
+        "/" +
+        btoa(item.atras_paso) + //número de paso
+        "/" +
+        btoa(item.codigo_barra) + //código de actuación
+        "/" +
+        btoa(item.actuacion_id) + //id de la actuación
+        "/" +
+        btoa(item.id) + //id del paso al que va
+        "/" +
+        btoa(self.tipo_tramite) + //tipo de trámite
+        "/" +
+        btoa(self.numero_expediente.toLowerCase()) + //número de expediente
+        "/" +
+        btoa(self.expediente_id) + //id del expediente
+        "/" +
+        btoa(item.adjuntar) //necesitar adjuntar documento
+
+        self.$router.push({ path: url });
+    },
+
+    agregarRequisitos(item){
+      let self = this;
+      self.loading = true;
+      this.barcode = item.codigo_barra
+      self.$store.state.services.requisitospendientesService
+        .get(this.barcode)
+        .then((r) => {
+          self.loading = false;
+          self.pendiente = r.data.pendiente;
+          self.cargado = r.data.cargado
+
+          let temp =0;
+          for (let i = 0; i < self.pendiente.length; i++) {
+            for (let j = 0; j < self.cargado.length; j++) {
+              if(self.pendiente[i].id === self.cargado[j].requisito_id){
+                temp = 1;
+              }
+            }if (temp===0) {
+              self.requisitos.push(self.pendiente[i]);
+            } else {
+              temp = 0;
+            }
+          }
+
+          self.forms.barcode = self.barcode;
+          self.forms.expediente = r.data.expediente;
+
+          self.totalRows = self.requisitos.length;
+          self.styleObjectRequisitos.display = "block";
+          self.abrirModalRequisitos = "modal fade in";
+          self.modalRequisitos = true;
+          self.loading = false;
+       }).catch((r) => {});
+    },
+
+    editarA(item) {
+      let self = this;
+      self.loading = true;
+      self.form.representantes = [];
+      self.$store.state.services.representanteactuacionService
+        .getAll(item.id)
+        .then((r) => {
+          if (item.tipo_razon_social == "PERSONA INDIVIDUAL") {
+            r.data.data.forEach((element) => {
+              self.representante.nit = element.razon_social.dpi;
+              self.representante.razon_social = element.razon_social.razon_social;
+
+              element.razon_social.telefonos.forEach((x) => {
+                self.representante.numero = x.numero;
+                self.numero_representante = x.numero;
+                self.representante.codigo_area = x.codigo_area;
+                self.representante.pais = x.pais;
+                self.representante.url = x.url;
+              });
+              element.razon_social.emails.forEach((x) => {
+                self.representante.email = x.email;
+              });
+              element.razon_social.direcciones.forEach((x) => {
+                  self.municipios.forEach((muni) => {
+                    if (muni.id == x.municipio_id) {
+                      self.representante.municipio_id = muni;
+                    }
+                  });
+                  self.representante.nombre = x.nombre;
+              });
+              self.representante.representacion = element.representacion;
+              self.ver_tags_representante = true;
+            });
+          } else {
+            r.data.data.forEach((element) => {
+              let objeto = new Object();
+              objeto.nit = element.razon_social.dpi;
+              objeto.razon_social = element.razon_social.razon_social;
+              element.razon_social.telefonos.forEach((x) => {
+                if (x.notificar) {
+                  objeto.numero = x.numero;
+                  objeto.codigo_area = x.codigo_area;
+                  objeto.pais = x.pais;
+                  objeto.url = x.url;
+                }
+              });
+              element.razon_social.emails.forEach((x) => {
+                if (x.notificar) {
+                  objeto.email = x.email;
+                }
+              });
+              element.razon_social.direcciones.forEach((x) => {
+                if (x.notificar) {
+                  objeto.completo = x.completo;
+                  objeto.municipio_id = x.municipio;
+                  objeto.nombre = x.nombre;
+                }
+              });
+              objeto.representacion = element.representacion;
+              self.form.representantes.push(objeto);
+            });
+          }
+
+          self.form.fecha_ingreso = moment(
+            item.fecha_ingreso,
+            "YYYY-MM-DD"
+          ).toDate();
+          self.form.id = item.id;
+          self.form.principal = item.principal;
+          self.form.nombre_expediente = item.nombre_expediente;
+          self.form.nit = item.nit;
+          self.form.razon_social = item.razon_social;
+          self.form.observacion = item.observacion;
+          self.form.tipo_razon_social = item.tipo_razon_social;
+          self.actuacion_selected = item;
+          self.styleObjectEditar.display = "block";
+          self.abrirModalEditar = "modal fade in";
+          self.modalEditar = true;
+          self.loading = false;
+        })
+        .catch((r) => {
+          console.log(r);
+        });
+    },
+
+    cancel_showRequisitos() {
+      this.forms.barcode= "";
+      this.forms.folio_correcion ="";
+      this.forms.expediente =null;
+      this.forms.requisitos = [];
+      this.forms.folio_inicial = 0;
+      this.pendiente = [];
+      this.cargado = [];
+      this.requisitos = [];
+      let self = this;
+      self.actuacion_selected = null;
+      self.styleObjectRequisitos.display = "";
+      self.abrirModalRequisitos = "modal fade";
+      self.modalRequisitos = false;
+    },
+
+    cancel_showEditar() {
+      let self = this;
+      self.actuacion_selected = null;
+      self.styleObjectEditar.display = "";
+      self.abrirModalEditar = "modal fade";
+      self.modalEditar = false;
+    },
+
+    quitarRepresentante(item) {
+      this.form.representantes.splice(
+        this.form.representantes.indexOf(item),
+        1
+      );
+    },
+
+    buscar_nit_representante(input) {
+      let self = this;
+      self.representante.nit = null;
+      return new Promise((resolve) => {
+        if (input.length < 3) {
+          self.ver_tags_representante = false;
+          return resolve([]);
+        }
+        self.$store.state.services.razonsocialService.get(input).then((r) => {
+          self.ver_tags_representante = r.data.length > 0 ? false : true;
+          self.representante.nit =
+            r.data.length > 0 ? null : input.toUpperCase();
+          resolve(r.data);
+        });
+      });
+    },
+
+    seleccionarNITR(result) {
+      if (result) {
+        this.representante.nit = result.dpi;
+        this.representante.razon_social = result.razon_social;
+        this.representante.numero = result.numero;
+        this.numero_representante = result.numero;
+        this.representante.codigo_area = result.codigo_area;
+        this.representante.pais = result.pais;
+        this.representante.url = result.url;
+        this.representante.email = result.email;
+        this.municipios.forEach((element) => {
+          if (element.id == result.municipio_id) {
+            this.representante.municipio_id = element;
+          }
+        });
+        this.representante.nombre = result.nombre;
+        this.ver_tags_representante = true;
+      } else {
+        this.clearR();
+      }
+    },
+
+    clearR() {
+      this.representante.nit = null;
+      this.representante.razon_social = null;
+      this.representante.numero = null;
+      this.numero_representante = null;
+      this.representante.codigo_area = null;
+      this.representante.pais = null;
+      this.representante.url = null;
+      this.representante.notificar_telefono = true;
+      this.representante.email = null;
+      this.representante.notificar_email = true;
+      this.representante.municipio_id = null;
+      this.representante.nombre = null;
+      this.representante.notificar_direccion = true;
+      this.ver_tags_representante = false;
+    },
+
+    getResultValueR(result) {
+      return result.nit;
+    },
+
+    validar_numero_representante(e) {
+      if (e.isValid) {
+        this.representante.numero = e.phoneNumber;
+        this.representante.codigo_area = e.countryCallingCode;
+        this.representante.pais = e.countryCode;
+        this.representante.url = e.uri;
+        this.esconder_representante = true;
+      } else {
+        this.representante.numero = e.phoneNumber;
+        this.representante.codigo_area = e.countryCallingCode;
+        this.representante.pais = e.countryCode;
+        this.representante.url = e.uri;
+        this.esconder_representante = false;
+      }
+    },
+
+    getRepresentacion() {
+      let self = this;
+      self.representaciones = [];
+      self.$store.state.services.representacionService
+        .getAll()
+        .then((r) => {
+          self.representaciones = r.data.data;
+        })
+        .catch((r) => {});
+    },
+
+    getMunicipio() {
+      let self = this;
+
+      self.$store.state.services.municipioService
+        .getAll()
+        .then((r) => {
+          self.municipios = r.data;
+        })
+        .catch((r) => {});
+    },
+
+    createOrEdit() {
+      let self = this;
+      self.$validator.validateAll().then((result) => {
+        if(result) {
+          if(self.form.tipo_razon_social == 'PERSONA INDIVIDUAL') {
+            self.form.representantes.push(self.representante)
+            self.form.principal ? self.updateExpediente(self.form) : self.updateActuacion(self.form);
+          } else {
+            self.form.representantes.length > 0
+              ? self.form.principal
+                ? self.updateExpediente()
+                : self.updateActuacion()
+              : this.$toastr.error(
+                  "Es necesario ingresar al menos 1 " + form.tipo_razon_social,
+                  "Mensaje"
+                );
+          }
+        } else {
+          this.$toastr.error("Verificar los datos", "Mensaje");
+        }
+      });
+    },
+
+    updateExpediente(data) {
+      let self = this;
+      self.loading = true;
+
+      self.$store.state.services.expedienteService
+        .update(data)
+        .then((r) => {
+          self.loading = false;
+
+          if (r.response) return;
+
+          this.$toastr.success(r.data, "Mensaje");
+          self.getPromise();
+          self.cancel_show();
+          self.cancel_showDocumento();
+          self.cancel_showEditar();
+          self.clearDataR();
+        })
+        .catch((r) => {
+          console.log(r);
+        });
+    },
+
+    updateActuacion(data) {
+      let self = this;
+      self.loading = true;
+
+      self.$store.state.services.actuacionService
+        .update(data)
+        .then((r) => {
+          self.loading = false;
+
+          if (r.response) return;
+
+          this.$toastr.success(r.data, "Mensaje");
+          self.getPromise();
+          self.cancel_show();
+          self.cancel_showDocumento();
+          self.cancel_showEditar();
+          self.clearDataR();
+        })
+        .catch((r) => {
+          console.log(r);
+        });
+    },
+
+    agregarRepresentante(scope) {
+      let self = this;
+      self.$validator.validateAll(scope).then((result) => {
+        if (result) {
+          let objeto = new Object();
+          objeto.nit = self.representante.nit;
+          objeto.razon_social = self.representante.razon_social;
+          objeto.numero = self.representante.numero;
+          objeto.codigo_area = self.representante.codigo_area;
+          objeto.pais = self.representante.pais;
+          objeto.url = self.representante.url;
+          objeto.notificar_telefono = self.representante.notificar_telefono;
+          objeto.email = self.representante.email;
+          objeto.municipio_id = self.representante.municipio_id;
+          objeto.nombre = self.representante.nombre;
+          objeto.notificar_direccion = self.representante.notificar_direccion;
+          objeto.notificar_email = self.representante.notificar_email;
+          objeto.completo =
+            self.representante.municipio_id.nombre +
+            ", " +
+            self.representante.nombre;
+
+          if (this.form.tipo_razon_social.nombre == "COOPROPIETARIO") {
+            objeto.representacion = { id: 1, nombre: "PROPIETARIO" };
+          } else {
+            objeto.representacion = self.representante.representacion;
+          }
+
+          self.form.representantes.push(objeto);
+          self.clearDataR();
+        } else {
+          this.$toastr.error(
+            "Verificar los datos del representante",
+            "Mensaje"
+          );
+        }
+      });
+    },
+
+    //limpiar data de formulario
+    clearDataR() {
+      let self = this;
+
+      Object.keys(self.representante).forEach(function (key, index) {
+        if (typeof self.representante[key] === "string")
+          self.representante[key] = "";
+        else if (typeof self.representante[key] === "object")
+          self.representante[key] = null;
+        else if (typeof self.representante[key] === "boolean")
+          self.representante[key] = false;
+        else if (typeof self.representante[key] === "number")
+          self.representante[key] = 0;
+      });
+
+      self.numero_representante = null;
+      self.esconder_representante = false;
+      self.representante.notificar_direccion = true;
+      self.representante.notificar_telefono = true;
+      self.representante.notificar_email = true;
+      self.$validator.reset();
+      self.$validator.reset();
+    },
+
+  },
+  mounted() {
+    $("body").resize();
+  },
+};
+</script>

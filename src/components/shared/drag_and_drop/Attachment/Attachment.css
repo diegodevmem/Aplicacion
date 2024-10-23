@@ -1,0 +1,15 @@
+
+.animated{
+  animation-duration: 5s;
+} 
+  figure {
+    margin-top: 10px;
+    height: 50px;
+  }
+  .dropzone-container {
+    display: flex;
+    flex-direction: column;
+    border: 3px dashed #1C658C;
+    border-radius: 90px;
+    cursor: pointer;
+  }

@@ -1,0 +1,46 @@
+
+#fondo_user{
+    left: 25%;
+    top: 35px;
+    display: inherit;
+    margin-left: auto;
+    margin-right: auto;
+    width: 50%;
+    height: 210px;
+    border-radius: 100%;
+    padding: auto;
+    background-size: cover;
+    border: 1px solid white;
+    z-index: -1px;  
+    position: absolute;
+}
+
+#fondo_texto{   
+    left: 5%;
+    margin-right: auto;
+    margin-left: auto;
+    width: 90%;
+    background-size: cover;
+    text-align: center;
+    margin-top: 4%;
+    position: absolute;
+    z-index: -1px;
+    top: 230px;
+    
+   
+}
+
+#fondo_imagen1{
+   
+    margin-left: auto;
+    margin-right: auto;
+    width: 100%;
+    height: 320px;    
+    padding: auto;
+    background-size: cover;
+
+    left: 0px;
+    top: 0px;
+    
+    
+}
